@@ -1,10 +1,9 @@
-import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.cache import caches
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
 from testApp.models import Book, User
-from testApp.forms import BookForm
+from testApp.forms import BookForm, LoginForm
 
 
 def index(request):
@@ -21,22 +20,14 @@ def index(request):
 
 def login(request):
     state = "Please log in below..."
-    username = password = ''
-    cache = caches['default']
     if request.POST:
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = User.objects.filter(name=username, password=password)
-        if user:
-            u = user[0]
-            cache.set('user', u)
-            u.last_login = datetime.datetime.now()
-            u.save()
+        form = LoginForm(request.POST)
+        if form.is_valid():
             return redirect('index')
         else:
             state = "Your username and/or password were incorrect."
     return render(request, 'login.html', {'state': state,
-                                          'username': username})
+                                          'form': LoginForm()})
 
 
 def logout(request):
@@ -71,29 +62,35 @@ def book_delete(request, pk):
 
 def book_borrow(request, pk):
     book = get_object_or_404(Book, pk=pk)
-    cache = caches['default']
-    user = cache.get('user')
-    if user:
-        book.num_copies = book.num_copies - 1
-        book.save()
-        user.books_borrowed.add(book)
-        user.save()
-        cache.set('user', user)
+    user = caches['default'].get('user')
+    book_borrow_logic(user, book)
     return redirect('index')
 
 
 def book_return(request, pk):
     book = get_object_or_404(Book, pk=pk)
-    cache = caches['default']
-    user = cache.get('user')
-    if user:
-        book.num_copies = book.num_copies + 1
-        book.save()
-        user.books_borrowed.remove(book)
-        user.save()
-        cache.set('user', user)
+    user = caches['default'].get('user')
+    book_return_logic(user, book)
     return redirect('index')
 
 
 def get_books():
     return Book.objects.all()
+
+
+def book_borrow_logic(user, book):
+    if user:
+        book.num_copies = book.num_copies - 1
+        book.save()
+        user.books_borrowed.add(book)
+        user.save()
+        caches['default'].set('user', user)
+
+
+def book_return_logic(user, book):
+    if user:
+        book.num_copies = book.num_copies + 1
+        book.save()
+        user.books_borrowed.remove(book)
+        user.save()
+        caches['default'].set('user', user)
