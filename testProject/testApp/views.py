@@ -14,7 +14,7 @@ def index(request):
     if user:
         context['username'] = user.name
         context['privileges'] = user.privileges
-        context['user_books'] = user.books_borrowed.all()
+        context['user_books'] = user.books_lent.all()
     return render(request, 'index.html', context)
 
 
@@ -60,37 +60,51 @@ def book_delete(request, pk):
     return render(request, 'book_delete.html', {'object': book})
 
 
-def book_borrow(request, pk):
-    book = get_object_or_404(Book, pk=pk)
-    user = caches['default'].get('user')
-    book_borrow_logic(user, book)
-    return redirect('index')
+def book_lend(request, pk):
+    try:
+        book = Book.objects.get(pk=pk)
+        user = caches['default'].get('user')
+        user = book_lend_logic(user, book)
+        caches['default'].set('user', user)
+        return redirect('index')
+    except Exception as e:
+        return render(request, '404.html', {'error': e.message})
 
 
 def book_return(request, pk):
-    book = get_object_or_404(Book, pk=pk)
-    user = caches['default'].get('user')
-    book_return_logic(user, book)
-    return redirect('index')
+    try:
+        user = caches['default'].get('user')
+        book = user.books_lent.get(pk=pk)
+        user = book_return_logic(user, book)
+        caches['default'].set('user', user)
+        return redirect('index')
+    except Exception as e:
+        return render(request, '404.html', {'error': e.message})
 
 
 def get_books():
     return Book.objects.all()
 
 
-def book_borrow_logic(user, book):
+def book_lend_logic(user, book):
     if user:
+        if user.books_lent.filter(id=book.id).exists():
+            raise Exception("The book is already in the user's list")
         book.num_copies = book.num_copies - 1
         book.save()
-        user.books_borrowed.add(book)
+        user.books_lent.add(book)
         user.save()
-        caches['default'].set('user', user)
+        return user
+    else:
+        raise Exception("User is not available")
 
 
 def book_return_logic(user, book):
     if user:
         book.num_copies = book.num_copies + 1
         book.save()
-        user.books_borrowed.remove(book)
+        user.books_lent.remove(book)
         user.save()
-        caches['default'].set('user', user)
+        return user
+    else:
+        raise Exception("User is not available")

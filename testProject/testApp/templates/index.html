@@ -33,7 +33,7 @@ body{
 					<a href="{% url 'book_update' book.id %}">Edit</a> |
 					<a href="{% url 'book_delete' book.id %}">Delete</a>
 				{% elif 'USR' == privileges.name and book.num_copies > 0 %}
-					<a href="{% url 'book_borrow' book.id %}">Borrow</a>
+					<a href="{% url 'book_lend' book.id %}">Lend</a>
 				{% else %}
 					No options available
 				{% endif %}
@@ -48,7 +48,7 @@ body{
 	{% elif 'USR' == privileges.name and user_books %}
 	<h3>Books in your list</h3>
 	<table border="1" style="width:50%">
-		<caption>Books borrowed</caption>
+		<caption>Books lent</caption>
 		<tr>
 			<th>Title</th>
 			<th>Author</th>

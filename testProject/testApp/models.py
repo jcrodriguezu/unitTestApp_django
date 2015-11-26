@@ -28,7 +28,7 @@ class User(models.Model):
     name = models.CharField(max_length=100, null=False)
     password = models.CharField(max_length=128, null=False)
     privileges = models.ForeignKey(Privileges)
-    books_borrowed = models.ManyToManyField(Book, blank=True)
+    books_lent = models.ManyToManyField(Book, blank=True)
     last_login = models.DateTimeField(null=True)
 
     def is_active(self):

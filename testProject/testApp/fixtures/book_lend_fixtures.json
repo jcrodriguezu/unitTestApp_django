@@ -1,0 +1,38 @@
+[
+    {
+        "pk": 1,
+        "model": "testApp.Privileges",
+        "fields": {
+            "name": "USR"
+        }
+    },
+    {
+        "pk": 1,
+        "model": "testApp.User",
+        "fields": {
+            "name": "test",
+            "password": "test",
+            "privileges": 1
+        }
+    },
+    {
+        "pk": 1,
+        "model": "testApp.Book",
+        "fields": {
+            "title": "Unit test book",
+            "author": "Steve Gates",
+            "num_pages": 150,
+            "num_copies": 5
+        }
+    },
+    {
+        "pk": 2,
+        "model": "testApp.Book",
+        "fields": {
+            "title": "Django 4 Dummies",
+            "author": "Bill Jobs",
+            "num_pages": 300,
+            "num_copies": 3
+        }
+    }
+]
