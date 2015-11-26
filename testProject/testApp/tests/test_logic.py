@@ -32,5 +32,5 @@ class BookLendTestCase(TestCase):
         #     book_lend_logic(self.user, self.book1)
         # self.assertEqual(
         #     "The book is already in the user's list",
-        #     str(cm.exception)
+        #     str(e.exception)
         # )
