@@ -1,37 +1,37 @@
 from django.test import TestCase
+from django.test import Client
+from django.core.cache import caches
 
-from testApp.models import User, Book
-from testApp.views import book_lend_logic
+from testApp.views import index
+from testApp.models import User
 
 
-class BookLendTestCase(TestCase):
-    fixtures = ['book_lend_fixtures.json']
+class ViewsTestCase(TestCase):
+    fixtures = ['views_fixtures.json']
 
     def setUp(self):
-        super(BookLendTestCase, self).setUp()
+        super(ViewsTestCase, self).setUp()
         self.user = User.objects.get(pk=1)
-        self.book1 = Book.objects.get(pk=1)
-        self.book2 = Book.objects.get(pk=2)
+        caches['default'].set('user', self.user)
+        self.client = Client()
 
-    def test_book_lend_valid(self):
-        u = book_lend_logic(self.user, self.book1)
-        self.assertTrue(u.books_lent.filter(id=self.book1.id).exists())
+    def test_index(self):
+        request = self.client.get('/', follow=True)
+        self.assertEqual(request.status_code, 200)
+        self.assertEqual(request.context['username'], "test")
+        self.assertEqual(request.context['privileges'].name, "USR")
+        self.assertListEqual(list(request.context['user_books']), [])
+        self.assertEqual(len(request.context['book_list']), 2)
 
-    def test_book_lend_fail(self):
-        u = book_lend_logic(self.user, self.book1)
+    def test_logout(self):
+        request = self.client.get('/logout', follow=True)
+        u = caches['default'].get('user')
+        self.assertEqual(u, None)
 
-        # Primera forma
-        try:
-            book_lend_logic(self.user, self.book1)
-            self.assertFail()
-        except Exception as e:
-            self.assertEqual(e.message,
-                             "The book is already in the user's list")
-
-        # # Segunda forma
-        # with self.assertRaises(Exception) as e:
-        #     book_lend_logic(self.user, self.book1)
-        # self.assertEqual(
-        #     "The book is already in the user's list",
-        #     str(cm.exception)
-        # )
+    def test_book_create(self):
+        book_data = {'title': 'Book from unit test',
+                     'author': 'author from unit test',
+                     'num_pages': 10, 'num_copies': 3}
+        request = self.client.post('/book_create', book_data, follow=True)
+        self.assertEqual(len(request.context['book_list']), 3)
+        self.assertTrue(True)
